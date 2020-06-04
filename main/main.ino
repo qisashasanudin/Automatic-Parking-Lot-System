@@ -1,12 +1,12 @@
 #include <Servo.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
+#include <Keypad_I2C.h>
 //===============================================================
-Servo myservo;
-LiquidCrystal_I2C lcd1(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
-LiquidCrystal_I2C lcd2(0x26, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
-
 byte val[6];
+const int addr_lcd1 = 0x27;
+const int addr_lcd2 = 0x26;
+const int addr_kpad = 0x25;
 const int place[]={13,12,11,10,9,8};
 const int ir_in = 7;
 const int ir_out = 6;
@@ -18,6 +18,24 @@ int valout = 0;
 int pos = 0; 
 int cnt;
 int y=0;
+
+char key;
+const byte ROWS = 4;
+const byte COLS = 3;
+byte rowPins[ROWS] = {0,1,2,3};
+byte colPins[ROWS] = {4,5,6};
+char keys[ROWS][COLS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
+};
+
+Servo myservo;
+LiquidCrystal_I2C lcd1(addr_lcd1, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+LiquidCrystal_I2C lcd2(addr_lcd2, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+Keypad_I2C kpad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, addr_kpad, PCF8574);
+
 //===============================================================
 void openGate(int gate){
   myservo.attach(gate);
@@ -31,6 +49,71 @@ void closeGate(int gate){
   myservo.write(0);
   delay(1000);
   myservo.detach();
+}
+//====================================
+void intro(){
+  lcd1.setCursor(0, 0);
+  lcd1.print("Auto Parking");
+  lcd1.setCursor(0, 1);
+  lcd1.print("Lot System");
+  
+  lcd2.setCursor(0, 0);
+  lcd2.print("SBK Modul 10");
+  lcd2.setCursor(0, 1);
+  lcd2.print("Kelompok 10B");
+  
+  closeGate(gate_in);
+  closeGate(gate_out);
+
+  lcd1.clear();
+  lcd1.setCursor(0, 0);
+  
+  lcd2.clear();
+  lcd2.setCursor(0, 0);
+}
+//====================================
+void scan_kpad(){
+  lcd2.setCursor(0, 1);
+  while(key != '#'){
+    key = kpad.getKey();
+    switch(key){
+      case '1':
+        lcd2.print(key);
+        break;
+      case '2':
+        lcd2.print(key);
+        break;
+      case '3':
+        lcd2.print(key);
+        break;
+      case '4':
+        lcd2.print(key);
+        break;
+      case '5':
+        lcd2.print(key);
+        break;
+      case '6':
+        lcd2.print(key);
+        break;
+      case '7':
+        lcd2.print(key);
+        break;
+      case '8':
+        lcd2.print(key);
+        break;
+      case '9':
+        lcd2.print(key);
+        break;
+      case '0':
+        lcd2.print(key);
+        break;
+      case '*':
+        lcd2.print(key);
+        break;
+      default:
+        break;
+    }
+  }
 }
 //====================================
 void check_in(){
@@ -56,8 +139,15 @@ void check_in(){
 void check_out(){
   valout=digitalRead(ir_out);
   if(valout==LOW){
-    lcd2.print("Parking cost: ");
     if(count>0){
+      
+      lcd2.setCursor(0, 0);
+      lcd2.print("Cost: ");
+      scan_kpad();
+      lcd2.clear();
+      lcd2.setCursor(0, 0);
+      lcd2.print("Thank you.");
+  
       openGate(gate_out);
       while(valout==LOW){
         valout=digitalRead(ir_out);
@@ -109,26 +199,10 @@ void setup() {
   pinMode(ir_out, INPUT);
   
   lcd1.begin(16, 2);
-  lcd1.setCursor(0, 0);
-  lcd1.print("Auto Parking");
-  lcd1.setCursor(0, 1);
-  lcd1.print("Lot System");
-  lcd1.setCursor(0, 0);
-
   lcd2.begin(16, 2);
-  lcd2.setCursor(0, 0);
-  lcd2.print("SBK Modul 10");
-  lcd2.setCursor(0, 1);
-  lcd2.print("Kelompok 10B");
-  lcd2.setCursor(0, 0);
+  kpad.begin();
   
-  closeGate(gate_in);
-  closeGate(gate_out);
-
-  lcd1.clear();
-  lcd1.setCursor(0, 0);
-  lcd2.clear();
-  lcd2.setCursor(0, 0);
+  intro();
 }
 //===============================================================
 void loop() {
