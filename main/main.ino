@@ -3,7 +3,8 @@
 #include <LiquidCrystal_I2C.h>
 //===============================================================
 Servo myservo;
-LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+LiquidCrystal_I2C lcd1(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+LiquidCrystal_I2C lcd2(0x26, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 byte val[6];
 const int place[]={13,12,11,10,9,8};
@@ -20,20 +21,15 @@ int y=0;
 //===============================================================
 void openGate(int gate){
   myservo.attach(gate);
-  myservo.write(0);
-  for (pos = 0; pos <= 90; pos += 1){
-    myservo.write(pos);
-    delay(15);
-  }
+  myservo.write(90);
+  delay(1000);
   myservo.detach();
 }
 //====================================
 void closeGate(int gate){
   myservo.attach(gate);
-  for (pos = 90; pos >= 0; pos -= 1){
-    myservo.write(pos);
-    delay(15);
-  }
+  myservo.write(0);
+  delay(1000);
   myservo.detach();
 }
 //====================================
@@ -60,14 +56,16 @@ void check_in(){
 void check_out(){
   valout=digitalRead(ir_out);
   if(valout==LOW){
-  if(count>0){
-    openGate(gate_out);
-    while(valout==LOW){
-      valout=digitalRead(ir_out);
-    }
-    count--;
-    delay(1000);
-    closeGate(gate_out);
+    lcd2.print("Parking cost: ");
+    if(count>0){
+      openGate(gate_out);
+      while(valout==LOW){
+        valout=digitalRead(ir_out);
+      }
+      count--;
+      delay(1000);
+      closeGate(gate_out);
+      lcd2.clear();
     }
     else if(count<=0){
       count=0;
@@ -77,25 +75,25 @@ void check_out(){
 //====================================
 void lcd_in(){
   if(count<6){
-    lcd.setCursor(0, 0);
-    lcd.print("Empty: ");
+    lcd1.setCursor(0, 0);
+    lcd1.print("Empty: ");
     for( y=0;y<=5;y++){
       val[y]=digitalRead(place[y]);
       if(val[y]==1){
-        lcd.print(y+1);
-        lcd.print(",");
+        lcd1.print(y+1);
+        lcd1.print(",");
       }
     }
-    lcd.print("             ");
+    lcd1.print("             ");
   }
   else if(count>=6){
-    lcd.setCursor(0, 0);
-    lcd.print("Parking lot is full.");
-    lcd.print("             ");
+    lcd1.setCursor(0, 0);
+    lcd1.print("Parking lot is full.");
+    lcd1.print("             ");
   }
-  lcd.setCursor(0, 1);
-  lcd.print("Parked car: ");
-  lcd.print(count);
+  lcd1.setCursor(0, 1);
+  lcd1.print("Parked car: ");
+  lcd1.print(count);
 }
 //====================================
 void lcd_out(){
@@ -110,21 +108,27 @@ void setup() {
   pinMode(ir_in, INPUT);
   pinMode(ir_out, INPUT);
   
-  lcd.begin(16, 2);
-  lcd.setCursor(0, 0);
-  lcd.print("Auto Parking");
-  lcd.setCursor(0, 1);
-  lcd.print("Lot System");
-  lcd.setCursor(0, 0);
+  lcd1.begin(16, 2);
+  lcd1.setCursor(0, 0);
+  lcd1.print("Auto Parking");
+  lcd1.setCursor(0, 1);
+  lcd1.print("Lot System");
+  lcd1.setCursor(0, 0);
+
+  lcd2.begin(16, 2);
+  lcd2.setCursor(0, 0);
+  lcd2.print("SBK Modul 10");
+  lcd2.setCursor(0, 1);
+  lcd2.print("Kelompok 10B");
+  lcd2.setCursor(0, 0);
   
-  openGate(gate_in);
-  openGate(gate_out);
   closeGate(gate_in);
   closeGate(gate_out);
 
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  count=0;
+  lcd1.clear();
+  lcd1.setCursor(0, 0);
+  lcd2.clear();
+  lcd2.setCursor(0, 0);
 }
 //===============================================================
 void loop() {
