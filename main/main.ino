@@ -12,6 +12,10 @@ const int ir_in = 7;
 const int ir_out = 6;
 const int gate_in = 5;
 const int gate_out = 4;
+
+long int timestamp[]={0,0,0,0,0,0};
+long int price[]={0,0,0,0,0,0};
+
 int count = 0;
 int valin = 0;
 int valout = 0;
@@ -40,14 +44,14 @@ Keypad_I2C kpad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, addr_kpad, PCF85
 void openGate(int gate){
   myservo.attach(gate);
   myservo.write(90);
-  delay(1000);
+  delay(100);
   myservo.detach();
 }
 //====================================
 void closeGate(int gate){
   myservo.attach(gate);
   myservo.write(0);
-  delay(1000);
+  delay(100);
   myservo.detach();
 }
 //====================================
@@ -64,7 +68,8 @@ void intro(){
   
   closeGate(gate_in);
   closeGate(gate_out);
-
+  delay(2000);
+  
   lcd1.clear();
   lcd1.setCursor(0, 0);
   
@@ -73,42 +78,54 @@ void intro(){
 }
 //====================================
 void scan_kpad(){
+  lcd2.setCursor(0, 0);
+  lcd2.print("Lot Number: ");
   lcd2.setCursor(0, 1);
   while(key != '#'){
     key = kpad.getKey();
     switch(key){
       case '1':
         lcd2.print(key);
+        lcd_out(0);
         break;
       case '2':
         lcd2.print(key);
+        lcd_out(1);
         break;
       case '3':
         lcd2.print(key);
+        lcd_out(2);
         break;
       case '4':
         lcd2.print(key);
+        lcd_out(3);
         break;
       case '5':
         lcd2.print(key);
+        lcd_out(4);
         break;
       case '6':
         lcd2.print(key);
+        lcd_out(5);
         break;
       case '7':
         lcd2.print(key);
+        lcd_out(10);
         break;
       case '8':
         lcd2.print(key);
+        lcd_out(10);
         break;
       case '9':
         lcd2.print(key);
+        lcd_out(10);
         break;
       case '0':
         lcd2.print(key);
         break;
       case '*':
         lcd2.print(key);
+        lcd_out(10);
         break;
       default:
         break;
@@ -125,7 +142,6 @@ void check_in(){
         valin=digitalRead(ir_in);
       }
       count++;
-      delay(1000);
       closeGate(gate_in);
     }
     else if(count>=6){
@@ -141,8 +157,6 @@ void check_out(){
   if(valout==LOW){
     if(count>0){
       
-      lcd2.setCursor(0, 0);
-      lcd2.print("Cost: ");
       scan_kpad();
       lcd2.clear();
       lcd2.setCursor(0, 0);
@@ -153,7 +167,6 @@ void check_out(){
         valout=digitalRead(ir_out);
       }
       count--;
-      delay(1000);
       closeGate(gate_out);
       lcd2.clear();
     }
@@ -186,10 +199,45 @@ void lcd_in(){
   lcd1.print(count);
 }
 //====================================
-void lcd_out(){
-  
+void lcd_out(int index){
+  if(index == 10){
+    lcd2.setCursor(5,0);
+    lcd2.print("Invalid Input");
+    delay(2000);
+    lcd2.clear();
+    check_out();
+  }
+  else{
+    if(price[index]==0){
+      lcd2.setCursor(5,0);
+      lcd2.print("Invalid Input");
+      delay(2000);
+      lcd2.clear();
+      check_out();
+    }
+    else{
+      lcd2.setCursor(5,0);
+      lcd2.print(price[index]);
+      scan_kpad();
+    }
+  }
 }
-//===============================================================
+//=============================================================== buat cek dan transfer harga
+void ir_patrol(){
+  for( y=0;y<=5;y++){
+    if(digitalRead(place[y]) == 0 and timestamp[y] == 0){
+      timestamp[y] = millis();
+    }
+    else if(digitalRead(place[y])== 1 and timestamp[y]>0){
+      price[y] = (timestamp[y]/1000)*100;
+      timestamp[y] = 0;
+    }
+    else{
+      continue;
+    }
+  }
+}
+//================================================================
 void setup() {
   Serial.begin(9600);
   for(int i=0;i<5;i++){
@@ -209,6 +257,6 @@ void loop() {
   check_in();
   check_out();
   lcd_in();
-  lcd_out();
+  ir_patrol();
 }
 //===============================================================
