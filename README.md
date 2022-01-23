@@ -1,4 +1,4 @@
 # Automatic-Parking-Lot-System
 
-![flowchart](/ss/flowchart.png)
+![flowchart](/ss/flowchart.jpg)
 ![tinkercad](/ss/tinkercad.png)
